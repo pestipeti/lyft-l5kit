@@ -125,20 +125,21 @@ class SemanticRasterizer(Rasterizer):
         history_frames: np.ndarray,
         history_agents: List[np.ndarray],
         history_tl_faces: List[np.ndarray],
+        world_to_image_space: np.ndarray,
         agent: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         # TODO TR_FACES
 
-        if agent is None:
-            ego_translation = history_frames[0]["ego_translation"]
-            ego_yaw = rotation33_as_yaw(history_frames[0]["ego_rotation"])
-        else:
-            ego_translation = np.append(agent["centroid"], history_frames[0]["ego_translation"][-1])
-            ego_yaw = agent["yaw"]
+        # if agent is None:
+        #     ego_translation = history_frames[0]["ego_translation"]
+        #     ego_yaw = rotation33_as_yaw(history_frames[0]["ego_rotation"])
+        # else:
+        #     ego_translation = np.append(agent["centroid"], history_frames[0]["ego_translation"][-1])
+        #     ego_yaw = agent["yaw"]
 
-        world_to_image_space = world_to_image_pixels_matrix(
-            self.raster_size, self.pixel_size, ego_translation, ego_yaw, self.ego_center,
-        )
+        # world_to_image_space = world_to_image_pixels_matrix(
+        #     self.raster_size, self.pixel_size, ego_translation, ego_yaw, self.ego_center,
+        # )
 
         # get XY of center pixel in world coordinates
         center_pixel = np.asarray(self.raster_size) * (0.5, 0.5)

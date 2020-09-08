@@ -122,18 +122,18 @@ to train models that can recover from slight divergence from training set data
         agent_extent = agent["extent"]
         selected_agent = agent
 
-    input_im = (
-        None
-        if not rasterizer
-        else rasterizer.rasterize(history_frames, history_agents, history_tl_faces, selected_agent)
-    )
-
     world_to_image_space = world_to_image_pixels_matrix(
         raster_size,
         pixel_size,
         ego_translation_m=agent_centroid,
         ego_yaw_rad=agent_yaw,
         ego_center_in_image_ratio=ego_center,
+    )
+
+    input_im = (
+        None
+        if not rasterizer
+        else rasterizer.rasterize(history_frames, history_agents, history_tl_faces, world_to_image_space, selected_agent)
     )
 
     future_coords_offset, future_yaws_offset, future_availability = _create_targets_for_deep_prediction(
