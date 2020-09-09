@@ -132,7 +132,12 @@ class MapAPI:
             lane.geo_frame,
         )
 
-        return {"xyz_left": xyz_left, "xyz_right": xyz_right}
+        xyz_left[:, -1] = 1.0
+        xyz_right[:, -1] = 1.0
+
+        xyz = np.vstack((xyz_left, np.flip(xyz_right, 0)))
+
+        return {"xyz_left": xyz_left.T, "xyz_right": xyz_right.T, "xyz": xyz.T}
 
     @staticmethod
     @no_type_check
@@ -174,7 +179,9 @@ class MapAPI:
             traffic_element.geo_frame,
         )
 
-        return {"xyz": xyz}
+        xyz[:, -1] = 1.0
+
+        return {"xyz": xyz.T}
 
     def is_traffic_face_colour(self, element_id: str, colour: str) -> bool:
         """
