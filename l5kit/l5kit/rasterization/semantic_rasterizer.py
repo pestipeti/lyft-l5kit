@@ -6,7 +6,7 @@ import numpy as np
 
 from ..data.filter import filter_tl_faces_by_status
 from ..data.map_api import MapAPI
-from ..geometry import rotation33_as_yaw, transform_point, transform_points, world_to_image_pixels_matrix
+from ..geometry import rotation33_as_yaw, transform_point, world_to_image_pixels_matrix
 from .rasterizer import Rasterizer
 
 # sub-pixel drawing precision constants
@@ -72,7 +72,6 @@ class SemanticRasterizer(Rasterizer):
         self.world_to_ecef = world_to_ecef
 
         self.proto_API = MapAPI(semantic_map_path, world_to_ecef)
-        self.iii = 0
 
         self.bounds_info = self.get_bounds()
 
@@ -96,10 +95,10 @@ class SemanticRasterizer(Rasterizer):
 
             if self.proto_API.is_lane(element):
                 lane = self.proto_API.get_lane_coords(element_id)
-                x_min = min(np.min(lane["xyz_left"][0, :]), np.min(lane["xyz_right"][0, :]))
-                y_min = min(np.min(lane["xyz_left"][1, :]), np.min(lane["xyz_right"][1, :]))
-                x_max = max(np.max(lane["xyz_left"][0, :]), np.max(lane["xyz_right"][0, :]))
-                y_max = max(np.max(lane["xyz_left"][1, :]), np.max(lane["xyz_right"][1, :]))
+                x_min = np.min(lane["xyz"][0, :])
+                y_min = np.min(lane["xyz"][1, :])
+                x_max = np.max(lane["xyz"][0, :])
+                y_max = np.max(lane["xyz"][1, :])
 
                 lanes_bounds = np.append(lanes_bounds, np.asarray([[[x_min, y_min], [x_max, y_max]]]), axis=0)
                 lanes_ids.append(element_id)
@@ -178,17 +177,10 @@ class SemanticRasterizer(Rasterizer):
 
             # get image coords
             lane_coords = self.proto_API.get_lane_coords(self.bounds_info["lanes"]["ids"][idx])
-
-            # xy_left = cv2_subpixel(world_to_image_space.dot(lane_coords["xyz_left"]).T[:, :2])
-            # xy_right = cv2_subpixel(world_to_image_space.dot(lane_coords["xyz_right"]).T[:, :2])
-
-            # xy_left = cv2_subpixel(transform_points(lane_coords["xyz_left"][:, :2], world_to_image_space))
-            # xy_right = cv2_subpixel(transform_points(lane_coords["xyz_right"][:, :2], world_to_image_space))
-            # lanes_area = np.vstack((xy_left, np.flip(xy_right, 0)))  # start->end left then end->start right
-            lanes_area = cv2_subpixel(world_to_image_space.dot(lane_coords["xyz"]).T[:, :2])
+            lanes_xy = cv2_subpixel(world_to_image_space.dot(lane_coords["xyz"]).T[:, :2])
 
             # Note(lberg): this called on all polygons skips some of them, don't know why
-            cv2.fillPoly(img, [lanes_area], (17, 17, 31), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
+            cv2.fillPoly(img, [lanes_xy], (17, 17, 31), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
 
             lane_type = "default"  # no traffic light face is controlling this lane
             lane_tl_ids = set([MapAPI.id_as_str(la_tc) for la_tc in lane.traffic_controls])
@@ -200,8 +192,7 @@ class SemanticRasterizer(Rasterizer):
                 elif self.proto_API.is_traffic_face_colour(tl_id, "yellow"):
                     lane_type = "yellow"
 
-            # lanes_lines[lane_type].extend([xy_left, xy_right])
-            lanes_lines[lane_type].extend([lanes_area])
+            lanes_lines[lane_type].extend([lanes_xy])
 
         cv2.polylines(img, lanes_lines["default"], False, (255, 217, 82), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
         cv2.polylines(img, lanes_lines["green"], False, (0, 255, 0), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
@@ -214,7 +205,6 @@ class SemanticRasterizer(Rasterizer):
             crosswalk = self.proto_API.get_crosswalk_coords(self.bounds_info["crosswalks"]["ids"][idx])
 
             xy_cross = cv2_subpixel(world_to_image_space.dot(crosswalk["xyz"]).T[:, :2])
-            # xy_cross = cv2_subpixel(transform_points(crosswalk["xyz"][:, :2], world_to_image_space))
             crosswalks.append(xy_cross)
 
         cv2.polylines(img, crosswalks, True, (255, 117, 69), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
