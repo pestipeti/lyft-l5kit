@@ -65,7 +65,13 @@ def draw_boxes(
         # corners = corners_base_coords * agent["extent"][:2] / 2  # corners in zero
         # r_m = yaw_as_rotation33(agent["yaw"])
         # box_world_coords[idx] = transform_points(corners, r_m) + agent["centroid"][:2]
-        extent = agent["extent"] / 2
+
+        if agent["label_probabilities"][14] == 1:
+            # Increase the pedestrians "size"
+            extent = agent["extent"] * 1.8 / 2
+        else:
+            extent = agent["extent"] / 2
+
         centroid = agent["centroid"]
 
         corners[0, 0] = -extent[0]

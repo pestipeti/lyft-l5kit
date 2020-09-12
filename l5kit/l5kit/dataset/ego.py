@@ -110,6 +110,7 @@ None if not desired
             "centroid": data["centroid"],
             "yaw": data["yaw"],
             "extent": data["extent"],
+            "agent_label": data["agent_label"],
         }
 
     def __getitem__(self, index: int) -> dict:
