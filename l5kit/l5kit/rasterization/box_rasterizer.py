@@ -6,6 +6,7 @@ import math
 
 from l5kit.data.zarr_dataset import AGENT_DTYPE
 
+from ..data.labels import PERCEPTION_LABELS
 from ..data.filter import filter_agents_by_labels, filter_agents_by_track_id
 from ..geometry import rotation33_as_yaw, transform_points, world_to_image_pixels_matrix
 from ..geometry.transform import yaw_as_rotation33
@@ -26,6 +27,9 @@ def get_ego_as_agent(frame: np.ndarray) -> np.ndarray:  # TODO this can be usefu
     ego_agent[0]["centroid"] = frame["ego_translation"][:2]
     ego_agent[0]["yaw"] = rotation33_as_yaw(frame["ego_rotation"])
     ego_agent[0]["extent"] = np.asarray((EGO_EXTENT_LENGTH, EGO_EXTENT_WIDTH, EGO_EXTENT_HEIGHT))
+    ego_agent[0]["label_probabilities"] = np.zeros((len(PERCEPTION_LABELS),), dtype=np.float32)
+    ego_agent[0]["label_probabilities"][3] = 1.0
+
     return ego_agent
 
 
@@ -65,13 +69,27 @@ def draw_boxes(
         # corners = corners_base_coords * agent["extent"][:2] / 2  # corners in zero
         # r_m = yaw_as_rotation33(agent["yaw"])
         # box_world_coords[idx] = transform_points(corners, r_m) + agent["centroid"][:2]
+        extent = agent["extent"]
+
+        if agent["label_probabilities"][3] == 1:
+            # Car - minimum extent..
+            # EGO_EXTENT_WIDTH = 1.85
+            # EGO_EXTENT_LENGTH = 4.87
+            extent[0] = max(3, extent[0])
+            extent[1] = max(1.4, extent[1])
+
+        elif agent["label_probabilities"][12] == 1:
+            # Cyclists
+            extent[0] = max(1.3, extent[0])
+            extent[1] = max(0.5, extent[1])
 
         if agent["label_probabilities"][14] == 1:
             # Increase the pedestrians "size"
-            extent = agent["extent"] * 1.8 / 2
+            extent = extent * 1.8
         else:
-            extent = agent["extent"] / 2
+            extent = extent
 
+        extent = extent / 2.0
         centroid = agent["centroid"]
 
         corners[0, 0] = -extent[0]

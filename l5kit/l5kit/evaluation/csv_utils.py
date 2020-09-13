@@ -171,9 +171,6 @@ def write_pred_csv(
 
     num_example, num_modes, future_len, num_coords = coords.shape
 
-    print(timestamps.shape)
-    print(labels.shape)
-
     assert num_coords == 2
     assert timestamps.shape == track_ids.shape == labels.shape == (num_example,)
     assert confs is not None and confs.shape == (num_example, num_modes)
