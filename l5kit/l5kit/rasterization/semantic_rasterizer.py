@@ -10,7 +10,7 @@ from ..geometry import rotation33_as_yaw, transform_point, world_to_image_pixels
 from .rasterizer import Rasterizer
 
 # sub-pixel drawing precision constants
-CV2_SHIFT = 8  # how many bits to shift in drawing
+CV2_SHIFT = 0  # how many bits to shift in drawing
 CV2_SHIFT_VALUE = 2 ** CV2_SHIFT
 
 
@@ -130,17 +130,6 @@ class SemanticRasterizer(Rasterizer):
     ) -> np.ndarray:
         # TODO TR_FACES
 
-        # if agent is None:
-        #     ego_translation = history_frames[0]["ego_translation"]
-        #     ego_yaw = rotation33_as_yaw(history_frames[0]["ego_rotation"])
-        # else:
-        #     ego_translation = np.append(agent["centroid"], history_frames[0]["ego_translation"][-1])
-        #     ego_yaw = agent["yaw"]
-
-        # world_to_image_space = world_to_image_pixels_matrix(
-        #     self.raster_size, self.pixel_size, ego_translation, ego_yaw, self.ego_center,
-        # )
-
         # get XY of center pixel in world coordinates
         center_pixel = np.asarray(self.raster_size) * (0.5, 0.5)
         center_world = transform_point(center_pixel, np.linalg.inv(world_to_image_space))
@@ -161,7 +150,7 @@ class SemanticRasterizer(Rasterizer):
 
         """
 
-        img = 255 * np.ones(shape=(self.raster_size[1], self.raster_size[0], 3), dtype=np.uint8)
+        img = np.zeros(shape=(self.raster_size[1], self.raster_size[0], 3), dtype=np.uint8)
 
         # filter using half a radius from the center
         raster_radius = float(np.linalg.norm(self.raster_size * self.pixel_size)) / 2
@@ -180,7 +169,7 @@ class SemanticRasterizer(Rasterizer):
             lanes_xy = cv2_subpixel(world_to_image_space.dot(lane_coords["xyz"]).T[:, :2])
 
             # Note(lberg): this called on all polygons skips some of them, don't know why
-            cv2.fillPoly(img, [lanes_xy], (17, 17, 31), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
+            # cv2.fillPoly(img, [lanes_xy], (17, 17, 31), shift=CV2_SHIFT)
 
             lane_type = "default"  # no traffic light face is controlling this lane
             lane_tl_ids = set([MapAPI.id_as_str(la_tc) for la_tc in lane.traffic_controls])
@@ -194,10 +183,10 @@ class SemanticRasterizer(Rasterizer):
 
             lanes_lines[lane_type].extend([lanes_xy])
 
-        cv2.polylines(img, lanes_lines["default"], False, (255, 217, 82), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
-        cv2.polylines(img, lanes_lines["green"], False, (0, 255, 0), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
-        cv2.polylines(img, lanes_lines["yellow"], False, (255, 255, 0), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
-        cv2.polylines(img, lanes_lines["red"], False, (255, 0, 0), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
+        cv2.polylines(img, lanes_lines["default"], False, (255, 217, 82), shift=CV2_SHIFT)
+        cv2.polylines(img, lanes_lines["green"], False, (0, 255, 0), shift=CV2_SHIFT)
+        cv2.polylines(img, lanes_lines["yellow"], False, (255, 255, 0), shift=CV2_SHIFT)
+        cv2.polylines(img, lanes_lines["red"], False, (255, 0, 0), shift=CV2_SHIFT)
 
         # plot crosswalks
         crosswalks = []
@@ -207,7 +196,7 @@ class SemanticRasterizer(Rasterizer):
             xy_cross = cv2_subpixel(world_to_image_space.dot(crosswalk["xyz"]).T[:, :2])
             crosswalks.append(xy_cross)
 
-        cv2.polylines(img, crosswalks, True, (255, 117, 69), lineType=cv2.LINE_AA, shift=CV2_SHIFT)
+        cv2.polylines(img, crosswalks, True, (255, 117, 69), shift=CV2_SHIFT)
 
         return img
 

@@ -8,8 +8,7 @@ from l5kit.data.zarr_dataset import AGENT_DTYPE
 
 from ..data.labels import PERCEPTION_LABELS
 from ..data.filter import filter_agents_by_labels, filter_agents_by_track_id
-from ..geometry import rotation33_as_yaw, transform_points, world_to_image_pixels_matrix
-from ..geometry.transform import yaw_as_rotation33
+from ..geometry import rotation33_as_yaw
 from .rasterizer import EGO_EXTENT_HEIGHT, EGO_EXTENT_LENGTH, EGO_EXTENT_WIDTH, Rasterizer
 
 
@@ -153,31 +152,12 @@ class BoxRasterizer(Rasterizer):
         world_to_image_space: np.ndarray,
         agent: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        # all frames are drawn relative to this one"
-        # frame = history_frames[0]
-        # if agent is None:
-        #     translation = frame["ego_translation"][:2]
-        #     yaw = rotation33_as_yaw(frame["ego_rotation"])
-        # else:
-        #     translation = agent["centroid"]
-        #     yaw = agent["yaw"]
-
-        # if self.pixel_size[0] != self.pixel_size[1]:
-        #     raise NotImplementedError("No support for non squared pixels yet")
-
-        # world_to_image_space = world_to_image_pixels_matrix(
-        #     self.raster_size,
-        #     self.pixel_size,
-        #     ego_translation_m=translation,
-        #     ego_yaw_rad=yaw,
-        #     ego_center_in_image_ratio=self.ego_center,
-        # )
 
         # this ensures we always end up with fixed size arrays, +1 is because current time is also in the history
-        # out_shape = (self.raster_size[1], self.raster_size[0], self.history_num_frames + 1)
-        # agents_images = np.zeros(out_shape, dtype=np.uint8)
-        # ego_images = np.zeros(out_shape, dtype=np.uint8)
-        out_im = np.zeros((*self.raster_size, (self.history_num_frames + 1) * 2), dtype=np.uint8)
+        out_im = np.zeros(shape=(self.raster_size[1],
+                                 self.raster_size[0],
+                                 (self.history_num_frames + 1) * 2),
+                          dtype=np.uint8)
         nframe = len(history_frames)
 
         for i, (frame, agents) in enumerate(zip(history_frames, history_agents)):
@@ -198,13 +178,8 @@ class BoxRasterizer(Rasterizer):
                     agents_image = draw_boxes(self.raster_size, world_to_image_space, np.append(agents, av_agent), 255)
                     ego_image = draw_boxes(self.raster_size, world_to_image_space, agent_ego, 255)
 
-            # agents_images[..., i] = agents_image
-            # ego_images[..., i] = ego_image
             out_im[..., i] = agents_image
             out_im[..., i + nframe] = ego_image
-
-        # combine such that the image consists of [agent_t, agent_t-1, agent_t-2, ego_t, ego_t-1, ego_t-2]
-        # out_im = np.concatenate((agents_images, ego_images), -1)
 
         return out_im.astype(np.float32) / 255
 

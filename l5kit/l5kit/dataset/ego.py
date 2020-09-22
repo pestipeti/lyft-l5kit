@@ -104,12 +104,14 @@ None if not desired
             "history_positions": history_positions,
             "history_yaws": history_yaws,
             "history_availabilities": data["history_availabilities"],
+            "history_velocities": data["history_velocities"],
             "world_to_image": data["world_to_image"],
             "track_id": track_id,
             "timestamp": timestamp,
             "centroid": data["centroid"],
             "yaw": data["yaw"],
             "extent": data["extent"],
+            "velocity": data["velocity"],
             "agent_label": data["agent_label"],
         }
 
