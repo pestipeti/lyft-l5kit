@@ -85,7 +85,7 @@ None if not desired
 
         # 0,1,C -> C,0,1
         if data["image"] is not None:
-            image = data["image"].transpose(2, 0, 1)
+            image = data["image"]  # .transpose(2, 0, 1)
 
         target_positions = np.array(data["target_positions"], dtype=np.float32)
         target_yaws = np.array(data["target_yaws"], dtype=np.float32)

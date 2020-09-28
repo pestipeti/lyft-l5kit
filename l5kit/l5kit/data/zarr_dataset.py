@@ -123,7 +123,7 @@ class ChunkedDataset:
         self.root.attrs["labels"] = PERCEPTION_LABELS
         return self
 
-    def open(self, mode: str = "r", cached: bool = True, cache_size_bytes: int = int(1e9)) -> "ChunkedDataset":
+    def open(self, mode: str = "r", cached: bool = False, cache_size_bytes: int = int(1e9)) -> "ChunkedDataset":
         """Opens a zarr dataset from disk from the path supplied in the constructor.
 
         Keyword Arguments:
