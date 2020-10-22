@@ -147,8 +147,16 @@ to train models that can recover from slight divergence from training set data
         history_num_frames + 1, history_frames, selected_track_id, history_agents, agent_centroid[:2], agent_yaw,
     )
 
-    return {
-        "image": input_im,
+    ret = {}
+
+    if isinstance(input_im, np.ndarray):
+        ret["image"] = input_im
+
+    elif input_im is not None:
+        ret.update(input_im)
+
+    ret.update({
+        # "image": input_im,
         "target_positions": future_coords_offset,
         "target_yaws": future_yaws_offset,
         "target_availabilities": future_availability,
@@ -162,7 +170,9 @@ to train models that can recover from slight divergence from training set data
         "extent": agent_extent,
         "velocity": history_velocity[1:4, :].mean(axis=0),
         "agent_label": agent_label,
-    }
+    })
+
+    return ret
 
 
 def _create_targets_for_deep_prediction(
