@@ -163,12 +163,12 @@ to train models that can recover from slight divergence from training set data
         "history_positions": history_coords_offset,
         "history_yaws": history_yaws_offset,
         "history_availabilities": history_availability,
-        "history_velocities": history_velocity,
+        # "history_velocities": history_velocity,
         "world_to_image": world_to_image_space,
         "centroid": agent_centroid,
         "yaw": agent_yaw,
         "extent": agent_extent,
-        "velocity": history_velocity[1:4, :].mean(axis=0),
+        # "velocity": history_velocity[1:4, :].mean(axis=0),
         "agent_label": agent_label,
     })
 
