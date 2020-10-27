@@ -170,6 +170,7 @@ to train models that can recover from slight divergence from training set data
         "extent": agent_extent,
         # "velocity": history_velocity[1:4, :].mean(axis=0),
         "agent_label": agent_label,
+        "track_id": selected_track_id if selected_track_id is not None else 0,
     })
 
     return ret
