@@ -13,6 +13,7 @@ from .transform import (
     yaw_as_rotation33,
 )
 from .voxel import normalize_intensity, points_within_bounds, voxel_coords_to_intensity_grid
+from .interpolate import compute_midpoint_line
 
 __all__ = [
     "angle_between_vectors",
@@ -32,4 +33,5 @@ __all__ = [
     "voxel_coords_to_intensity_grid",
     "normalize_intensity",
     "angular_distance",
+    "compute_midpoint_line",
 ]
