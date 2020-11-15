@@ -4,7 +4,7 @@ from typing import Iterator, Sequence, Union, no_type_check
 import numpy as np
 import pymap3d as pm
 
-from ..geometry import transform_points
+from ..geometry import transform_points, compute_midpoint_line
 from .proto.road_network_pb2 import GeoFrame, GlobalId, MapElement, MapFragment
 
 CACHE_SIZE = int(1e5)
@@ -110,7 +110,7 @@ class MapAPI:
             element_id (str): lane element id
 
         Returns:
-            dict: a dict with the two boundaries coordinates as (Nx3) XYZ arrays
+            dict: a dict with the boundaries coordinates as (3xN) XYZ arrays
         """
         element = self[element_id]
         assert self.is_lane(element)
@@ -132,7 +132,20 @@ class MapAPI:
             lane.geo_frame,
         )
 
-        return {"xyz_left": xyz_left, "xyz_right": xyz_right}
+        xyz = np.vstack((xyz_left, np.flip(xyz_right, 0)))
+        xyz[:, -1] = 1.0
+
+        # num_points = int((xyz_left.shape[0] + xyz_right.shape[0]) / 2)
+        num_points = int(xyz_left.shape[0])
+
+        if xyz_right.shape[0] > xyz_left.shape[0]:
+            num_points = xyz_right.shape[0]
+
+        xy_midpoint = compute_midpoint_line(xyz_left, xyz_right, num_interp_pts=num_points)[0]
+        xyz_midpoint = np.ones((xy_midpoint.shape[0], 3), dtype=np.float)
+        xyz_midpoint[:, :2] = xy_midpoint
+
+        return {"xyz": xyz.T, "xyz_midline": xyz_midpoint.T}
 
     @staticmethod
     @no_type_check
@@ -161,7 +174,7 @@ class MapAPI:
             element_id (str): crosswalk element id
 
         Returns:
-            dict: a dict with the polygon coordinates as an (Nx3) XYZ array
+            dict: a dict with the polygon coordinates as an (3xN) XYZ array
         """
         element = self[element_id]
         assert self.is_crosswalk(element)
@@ -174,7 +187,8 @@ class MapAPI:
             traffic_element.geo_frame,
         )
 
-        return {"xyz": xyz}
+        xyz[:, -1] = 1.0
+        return {"xyz": xyz.T}
 
     def is_traffic_face_colour(self, element_id: str, colour: str) -> bool:
         """

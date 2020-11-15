@@ -142,6 +142,7 @@ def write_pred_csv(
     timestamps: np.ndarray,
     track_ids: np.ndarray,
     coords: np.ndarray,
+    labels: np.ndarray,
     confs: Optional[np.ndarray] = None,
 ) -> None:
     """
@@ -169,8 +170,9 @@ def write_pred_csv(
         confs = np.ones((len(coords), 1))  # full confidence
 
     num_example, num_modes, future_len, num_coords = coords.shape
+
     assert num_coords == 2
-    assert timestamps.shape == track_ids.shape == (num_example,)
+    assert timestamps.shape == track_ids.shape == labels.shape == (num_example,)
     assert confs is not None and confs.shape == (num_example, num_modes)
     assert np.allclose(np.sum(confs, axis=-1), 1.0)
     assert num_modes <= MAX_MODES
@@ -186,15 +188,15 @@ def write_pred_csv(
 
     # create and write HEADER
     # order is (timestamp,track_id,confidences,coords)
-    fieldnames = ["timestamp", "track_id"] + confs_keys  # all confidences before coordinates
+    fieldnames = ["timestamp", "track_id", "agent_label"] + confs_keys  # all confidences before coordinates
     for coords_labels in coords_keys_list:
         fieldnames.extend(coords_labels)
 
     writer = csv.DictWriter(open(csv_path, "w"), fieldnames)
     writer.writeheader()
 
-    for timestamp, track_id, coord, conf in zip(timestamps, track_ids, coords_padded, confs_padded):
-        line = {"timestamp": timestamp, "track_id": track_id}
+    for timestamp, track_id, label, coord, conf in zip(timestamps, track_ids, labels, coords_padded, confs_padded):
+        line = {"timestamp": timestamp, "track_id": track_id, "agent_label": label}
         line.update({key: con for key, con in zip(confs_keys, conf)})
 
         for idx in range(MAX_MODES):
@@ -219,7 +221,7 @@ def read_pred_csv(csv_path: str) -> Iterator[dict]:
     assert fieldnames is not None, "error reading fieldnames"
 
     # exclude timestamp, track_id and MAX_MODES confs, the rest should be (x, y) * len * 3 = 6*len
-    future_len = (len(fieldnames) - (2 + MAX_MODES)) / 6
+    future_len = (len(fieldnames) - (3 + MAX_MODES)) / 6
     assert future_len == int(future_len), "error estimating len"
     future_len = int(future_len)
 
@@ -229,6 +231,7 @@ def read_pred_csv(csv_path: str) -> Iterator[dict]:
     for row in reader:
         track_id = row["track_id"]
         timestamp = row["timestamp"]
+        label = row["agent_label"]
 
         conf = np.asarray([np.float64(row[conf_label]) for conf_label in confs_labels])
 
@@ -239,4 +242,4 @@ def read_pred_csv(csv_path: str) -> Iterator[dict]:
 
         coords = np.stack(coords, axis=0)
 
-        yield {"track_id": track_id, "timestamp": timestamp, "coords": coords, "conf": conf}
+        yield {"track_id": track_id, "timestamp": timestamp, "agent_label": label, "coords": coords, "conf": conf}

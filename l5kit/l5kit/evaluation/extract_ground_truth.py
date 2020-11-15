@@ -50,13 +50,7 @@ def export_zarr_to_csv(
         },
     }
 
-    render_context = RenderContext(
-        np.asarray(cfg["raster_params"]["raster_size"]),
-        cfg["raster_params"]["pixel_size"],
-        cfg["raster_params"]["ego_center"],
-    )
-    rasterizer = StubRasterizer(render_context, filter_agents_threshold=filter_agents_threshold,)
-    dataset = AgentDataset(cfg=cfg, zarr_dataset=zarr_dataset, rasterizer=rasterizer, agents_mask=agents_mask)
+    dataset = AgentDataset(cfg=cfg, zarr_dataset=zarr_dataset, rasterizer=None, agents_mask=agents_mask)
 
     future_coords_offsets = []
     target_availabilities = []

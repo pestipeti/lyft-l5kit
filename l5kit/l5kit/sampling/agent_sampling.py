@@ -102,6 +102,7 @@ to train models that can recover from slight divergence from training set data
         agent_yaw_rad = rotation33_as_yaw(cur_frame["ego_rotation"])
         agent_extent_m = np.asarray((EGO_EXTENT_LENGTH, EGO_EXTENT_WIDTH, EGO_EXTENT_HEIGHT))
         selected_agent = None
+        agent_label = 3
     else:
         # this will raise IndexError if the agent is not in the frame or under agent-threshold
         # this is a strict error, we cannot recover from this situation
@@ -115,6 +116,7 @@ to train models that can recover from slight divergence from training set data
         agent_yaw_rad = float(agent["yaw"])
         agent_extent_m = agent["extent"]
         selected_agent = agent
+        agent_label = int(np.array(agent["label_probabilities"]).nonzero()[0][0])
 
     input_im = (
         None
@@ -135,8 +137,16 @@ to train models that can recover from slight divergence from training set data
         history_num_frames + 1, history_frames, selected_track_id, history_agents, agent_from_world, agent_yaw_rad
     )
 
-    return {
-        "image": input_im,
+    ret = {}
+
+    if isinstance(input_im, np.ndarray):
+        ret["image"] = input_im
+
+    elif input_im is not None:
+        ret.update(input_im)
+
+    ret.update({
+        # "image": input_im,
         "target_positions": future_coords_offset,
         "target_yaws": future_yaws_offset,
         "target_availabilities": future_availability,
@@ -151,7 +161,11 @@ to train models that can recover from slight divergence from training set data
         "centroid": agent_centroid_m,
         "yaw": agent_yaw_rad,
         "extent": agent_extent_m,
-    }
+        "agent_label": agent_label,
+        "track_id": selected_track_id if selected_track_id is not None else 0,
+    })
+
+    return ret
 
 
 def _create_targets_for_deep_prediction(

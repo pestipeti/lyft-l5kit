@@ -22,7 +22,7 @@ class EgoDataset(Dataset):
         self,
         cfg: dict,
         zarr_dataset: ChunkedDataset,
-        rasterizer: Rasterizer,
+        rasterizer: Optional[Rasterizer] = None,
         perturbation: Optional[Perturbation] = None,
     ):
         """
@@ -107,14 +107,14 @@ None if not desired
         timestamp = frames[state_index]["timestamp"]
         track_id = np.int64(-1 if track_id is None else track_id)  # always a number to avoid crashing torch
 
-        result = {
+        data.update({
             "target_positions": target_positions,
             "target_yaws": target_yaws,
             "target_availabilities": data["target_availabilities"],
             "history_positions": history_positions,
             "history_yaws": history_yaws,
             "history_availabilities": data["history_availabilities"],
-            "world_to_image": data["raster_from_world"],  # TODO deprecate
+            # "world_to_image": data["raster_from_world"],  # TODO deprecate
             "raster_from_world": data["raster_from_world"],
             "raster_from_agent": data["raster_from_agent"],
             "agent_from_world": data["agent_from_world"],
@@ -124,15 +124,15 @@ None if not desired
             "centroid": data["centroid"],
             "yaw": data["yaw"],
             "extent": data["extent"],
-        }
+        })
 
         # when rast is None, image could be None
-        image = data["image"]
-        if image is not None:
-            # 0,1,C -> C,0,1
-            result["image"] = image.transpose(2, 0, 1)
+        # image = data["image"]
+        # if image is not None:
+        #     # 0,1,C -> C,0,1
+        #     result["image"] = image.transpose(2, 0, 1)
 
-        return result
+        return data
 
     def __getitem__(self, index: int) -> dict:
         """

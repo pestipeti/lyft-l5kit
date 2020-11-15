@@ -22,7 +22,7 @@ class AgentDataset(EgoDataset):
         self,
         cfg: dict,
         zarr_dataset: ChunkedDataset,
-        rasterizer: Rasterizer,
+        rasterizer: Optional[Rasterizer] = None,
         perturbation: Optional[Perturbation] = None,
         agents_mask: Optional[np.ndarray] = None,
         min_frame_history: int = MIN_FRAME_HISTORY,
