@@ -99,7 +99,6 @@ class MapAPI:
             bool: True if the element is a valid lane
         """
         return bool(element.element.HasField("lane"))
-
     @lru_cache(maxsize=CACHE_SIZE)
     def get_lane_coords(self, element_id: str) -> dict:
         """
@@ -145,7 +144,26 @@ class MapAPI:
         xyz_midpoint = np.ones((xy_midpoint.shape[0], 3), dtype=np.float)
         xyz_midpoint[:, :2] = xy_midpoint
 
-        return {"xyz": xyz.T, "xyz_midline": xyz_midpoint.T}
+        left_divider = np.asarray(left_boundary.divider_type)
+        right_divider = np.asarray(right_boundary.divider_type)
+
+        if len(left_divider) == 0:
+            left_divider = 0
+        else:
+            left_divider = left_divider[0]
+
+        if len(right_divider) == 0:
+            right_divider = 0
+        else:
+            right_divider = right_divider[0]
+
+        return {
+            "xyz": xyz.T,
+            "xyz_midline": xyz_midpoint.T,
+            "left_point_num": xyz_left.shape[0],
+            "left_divider_type": left_divider,
+            "right_divider_type": right_divider,
+        }
 
     @staticmethod
     @no_type_check
@@ -178,6 +196,56 @@ class MapAPI:
         """
         element = self[element_id]
         assert self.is_crosswalk(element)
+        traffic_element = element.element.traffic_control_element
+
+        xyz = self.unpack_deltas_cm(
+            traffic_element.points_x_deltas_cm,
+            traffic_element.points_y_deltas_cm,
+            traffic_element.points_z_deltas_cm,
+            traffic_element.geo_frame,
+        )
+
+        xyz[:, -1] = 1.0
+        return {"xyz": xyz.T}
+
+    @staticmethod
+    @no_type_check
+    def is_speedbump(element: MapElement) -> bool:
+        if not element.element.HasField("traffic_control_element"):
+            return False
+
+        traffic_element = element.element.traffic_control_element
+        return bool(traffic_element.HasField("speed_bump") and traffic_element.points_x_deltas_cm)
+
+    @lru_cache(maxsize=CACHE_SIZE)
+    def get_speedbump_coords(self, element_id: str) -> dict:
+        element = self[element_id]
+        assert self.is_speedbump(element)
+        traffic_element = element.element.traffic_control_element
+
+        xyz = self.unpack_deltas_cm(
+            traffic_element.points_x_deltas_cm,
+            traffic_element.points_y_deltas_cm,
+            traffic_element.points_z_deltas_cm,
+            traffic_element.geo_frame,
+        )
+
+        xyz[:, -1] = 1.0
+        return {"xyz": xyz.T}
+
+    @staticmethod
+    @no_type_check
+    def is_speedhump(element: MapElement) -> bool:
+        if not element.element.HasField("traffic_control_element"):
+            return False
+
+        traffic_element = element.element.traffic_control_element
+        return bool(traffic_element.HasField("speed_hump") and traffic_element.points_x_deltas_cm)
+
+    @lru_cache(maxsize=CACHE_SIZE)
+    def get_speedhump_coords(self, element_id: str) -> dict:
+        element = self[element_id]
+        assert self.is_speedhump(element)
         traffic_element = element.element.traffic_control_element
 
         xyz = self.unpack_deltas_cm(
