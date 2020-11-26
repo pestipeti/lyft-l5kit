@@ -159,6 +159,8 @@ class MapAPI:
             right_divider = right_divider[0]
 
         return {
+            "xyz_left": xyz_left,
+            "xyz_right": xyz_right,
             "xyz": xyz.T,
             "xyz_midline": xyz_midpoint.T,
             "left_point_num": xyz_left.shape[0],
@@ -207,7 +209,10 @@ class MapAPI:
         )
 
         xyz[:, -1] = 1.0
-        return {"xyz": xyz.T}
+        return {
+            "xyz": xyz,
+            "xyz_t": xyz.T
+        }
 
     @staticmethod
     @no_type_check
